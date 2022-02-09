@@ -47,8 +47,6 @@ namespace TelegramWebApiProj
 
             //app.UseHttpsRedirection();
 
-            serviceProvider.GetRequiredService<TelegramBot>().GetTelegramBot();
-
             app.UseRouting();
 
             app.UseAuthorization();

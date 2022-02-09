@@ -11,6 +11,8 @@ using Telegram.Bot.Types.Enums;
 using TelegramWebApiProj.Models;
 using System.Linq;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
 
 namespace TelegramWebApiProj.Controllers
 {
@@ -34,7 +36,6 @@ namespace TelegramWebApiProj.Controllers
         Models.User user = new Models.User();
 
         TelegramBotClient botClient = new TelegramBotClient("5289996800:AAEjRMLLvhmA67f-hBUTKUQ1v43qEi7kOFQ");
-        Message sentMessage = null;
         long chatId = 0;
 
         [HttpPost]
@@ -70,34 +71,61 @@ namespace TelegramWebApiProj.Controllers
                         {
                             if (update.CallbackQuery.Data == $"{item.OrderNumber} Принят")
                             {
-                                //user.IsAccept = true;
+                                item.IsAccept = true;
                                 await botClient.SendTextMessageAsync(
-                                chatId: user.ChatId,
-                                text: $"Заказ номер {item.OrderNumber} принят на обработку"
+                                    chatId: user.ChatId,
+                                    text: $"Заказ номер {item.OrderNumber} принят на обработку"
                                 );
 
                                 await botClient.EditMessageReplyMarkupAsync(
                                     chatId: user.ChatId,
                                     messageId: (int)item.MessageId
                                     );
+
+                                RequestData requestData = new RequestData
+                                {
+                                    OrderId = item.Id,
+                                    StatusId = (int)OrderStatus.Accept
+                                };
+                                SendStatusAsync(requestData);
                             }
                             if (update.CallbackQuery.Data == $"{item.OrderNumber} Отклонён")
                             {
-
                                 item.IsAccept = false;
                                 await botClient.SendTextMessageAsync(
-                                chatId: user.ChatId,
-                                text: $"Заказ номер {item.OrderNumber} отклонён"
+                                    chatId: user.ChatId,
+                                    text: $"Заказ номер {item.OrderNumber} отклонён"
                                 );
                                 await botClient.EditMessageReplyMarkupAsync(
                                     chatId: user.ChatId,
                                     messageId: (int)item.MessageId
                                 );
+
+                                RequestData requestData = new RequestData
+                                {
+                                    OrderId = item.Id,
+                                    StatusId = (int)OrderStatus.Cancel
+                                };
+                                SendStatusAsync(requestData);
                             }
                         }
                     }
                 }
             }
+        }
+        public async Task SendStatusAsync(RequestData requestData)
+        {
+            var json = JsonConvert.SerializeObject(requestData, Formatting.Indented,
+                                    new JsonSerializerSettings()
+                                    {
+                                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                                    });
+            var data = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = "https://staging-api.crondostav.ru/api/adminpanel/v1/Tbot/SetOrderStatus";
+            using var client = new HttpClient();
+
+            var response = await client.PostAsync(url, data);
         }
     }
 }

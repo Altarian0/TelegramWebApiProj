@@ -24,10 +24,11 @@ namespace TelegramWebApiProj.Controllers
         Message sentMessage = null;
 
         [HttpPost]
-        public async Task CreateDescriptionForTelegram(object order)
+        public async Task CreateDescriptionForTelegram(Order order)
         {
             var deserializeOrder = JsonConvert.DeserializeObject<Order>(order.ToString());
             ExtendedOrder extendedOrder = new ExtendedOrder();
+            extendedOrder.Id = deserializeOrder.Id;
             extendedOrder.OrderNumber = deserializeOrder.OrderNumber;
             extendedOrder.Amount = deserializeOrder.Amount;
             extendedOrder.PhoneNumber = deserializeOrder.PhoneNumber;
